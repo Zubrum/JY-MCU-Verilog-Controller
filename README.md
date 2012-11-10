@@ -1,2 +1,2 @@
-JY-MCU-Verilog-Controller
+JY MCU Verilog Controller
 =========================

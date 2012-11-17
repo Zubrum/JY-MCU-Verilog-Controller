@@ -1,4 +1,4 @@
-`include "parts.vh"
+`include "jymcu_lib.vh"
 
 module test_lib
     (

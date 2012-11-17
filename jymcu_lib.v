@@ -243,224 +243,225 @@ endmodule
 module zrb_bt_controller
 /*
 zrb_bt_controller instance_name(
-	CLK_IN,
-	CLK_EN
-	DATA_IN[7:0],
-	NEW_DATA,
-	TX_FULL,
-	SPEED_SELECT,
-	WR,
-	RD,
-	DATA_OUT[7:0]
-	);
+    CLK_IN,
+    CLK_EN
+    DATA_IN[7:0],
+    NEW_DATA,
+    TX_FULL,
+    SPEED_SELECT,
+    WR,
+    RD,
+    DATA_OUT[7:0]
+    );
 */
-	(
-	input	wire				clk,
-	input	wire				clk_en,
-	input	wire	[  7 :  0 ] data_in,
-	input	wire				new_data,
-	input	wire				tx_full,
-	output	wire				speed_select,
-	output	wire				wr,
-	output	wire				rd,
-	output	wire	[  7 :  0 ] data_out
-	);
+    (
+    input   wire                clk,
+    input   wire                clk_en,
+    input   wire    [  7 :  0 ] data_in,
+    input   wire                new_data,
+    input   wire                tx_full,
+    output  wire                speed_select,
+    output  wire                wr,
+    output  wire                rd,
+    output  wire    [  7 :  0 ] data_out
+    );
 
 
 
-reg				flg_9600 = 1'b0;
-reg				flg_115200 = 1'b1;
-reg				r_rd = 1'b0;
-reg				r_wr = 1'b0;
+reg             flg_9600 = 1'b0;
+reg             flg_115200 = 1'b1;
+reg             r_rd = 1'b0;
+reg             r_wr = 1'b0;
 
 
-reg	[  2 :  0 ] at_cnt = 3'b0;
+reg [  2 :  0 ] at_cnt = 3'b0;
 reg [  7 :  0 ] AT [  0 :  7 ];
 initial begin
-	AT[0] = 8'h41; //A
-	AT[1] = 8'h54; //T
-	AT[2] = 8'h2B; //+
-	AT[3] = 8'h42; //B
-	AT[4] = 8'h41; //A
-	AT[5] = 8'h55; //U
-	AT[6] = 8'h44; //D
-	AT[7] = 8'h38; //8 - speed 115200
+    AT[0] = 8'h41; //A
+    AT[1] = 8'h54; //T
+    AT[2] = 8'h2B; //+
+    AT[3] = 8'h42; //B
+    AT[4] = 8'h41; //A
+    AT[5] = 8'h55; //U
+    AT[6] = 8'h44; //D
+    AT[7] = 8'h38; //8 - speed 115200
 end
 
 reg [  2 :  0 ] resp_cnt = 3'b0;
 reg [  7 :  0 ] RESP [  0 :  7 ];
 initial begin
-	RESP[0] = 8'h3F; //?
-	RESP[1] = 8'h3F; //?
-	RESP[2] = 8'h3F; //?
-	RESP[3] = 8'h3F; //?
-	RESP[4] = 8'h3F; //?
-	RESP[5] = 8'h3F; //?
-	RESP[6] = 8'h3F; //?
-	RESP[7] = 8'h3F; //?
+    RESP[0] = 8'h3F; //?
+    RESP[1] = 8'h3F; //?
+    RESP[2] = 8'h3F; //?
+    RESP[3] = 8'h3F; //?
+    RESP[4] = 8'h3F; //?
+    RESP[5] = 8'h3F; //?
+    RESP[6] = 8'h3F; //?
+    RESP[7] = 8'h3F; //?
 end
 
 
-localparam [  2 :  0 ]  TEST_AT = 		3'b000,
-						RESPONSE = 		3'b001,
-						READ =			3'b101,
-						
-						CONFIG115200 = 	3'b100,
-						IDLE =			3'b011,
-						
-						SHOW = 			3'b010,
-						ERROR =			3'b110;
-reg	[  2 :  0 ] r_state = TEST_AT;
+localparam [  2 :  0 ]  TEST_AT =       3'b000,
+                        RESPONSE =      3'b001,
+                        READ =          3'b101,
+                        
+                        CONFIG115200 =  3'b100,
+                        IDLE =          3'b011, //main program
+                        
+                        SHOW =          3'b010,
+                        ERROR =         3'b110;
+reg [  2 :  0 ] r_state = TEST_AT;
 
-reg	[  7 :  0 ] r_di = 8'b0;
+reg [  7 :  0 ] r_di = 8'b0;
 reg [  7 :  0 ] r_do = 8'b0;
 reg [ 18 :  0 ] time_out = 19'b0;
 
-assign speed_select = 1;//flg_115200;	
+assign speed_select = flg_115200;
 assign rd = r_rd;
 assign wr = r_wr;
 assign data_out = r_do;
 
 always@(posedge clk)
 begin
-	r_rd <= 1'b0;
-	r_wr <= 1'b0;
-	case(r_state)
-		TEST_AT:
-			if(at_cnt == 3'd1)
-				r_state <= RESPONSE;
-		RESPONSE:
-			if(time_out[18])
-				r_state <= ERROR;
-		READ:
-		r_state <= ERROR;
-		/*begin
-			if(flg_115200 & ~flg_9600)
-				r_state <= IDLE;
-			if(flg_9600 & ~flg_115200)
-				r_state <= CONFIG115200;
-		end
-*/
-		IDLE:
-		begin
-			if(new_data & data_in == 8'hDD)
-				r_state <= TEST_AT;
-			if(new_data & data_in == 8'hFF)
-				r_state <= SHOW;
-		end
+    r_rd <= 1'b0;
+    r_wr <= 1'b0;
+    case(r_state)
+        TEST_AT:
+            if(at_cnt == 3'd1)
+                r_state <= RESPONSE;
+        RESPONSE:
+            if(time_out[18])
+                r_state <= READ;
+        READ:
+        begin
+            if(flg_115200 & ~flg_9600)
+                r_state <= IDLE;
+            if(flg_9600 & ~flg_115200)
+                r_state <= CONFIG115200;
+        end
 
-		CONFIG115200:
-			if(at_cnt == 3'd7)
-				r_state <= RESPONSE;
+        IDLE:
+        begin
+            if(new_data & data_in == 8'hDD)
+                r_state <= TEST_AT;
+            if(new_data & data_in == 8'hFF)
+                r_state <= SHOW;
+        end
 
-		ERROR:
-			r_state <= ERROR;
-		default:
-			r_state <= ERROR;
-	endcase
+        CONFIG115200:
+            if(at_cnt == 3'd7)
+                r_state <= RESPONSE;
 
-	case(r_state)
-		TEST_AT:
-		begin
-			resp_cnt <= 3'b0;
-			flg_9600 <= 1'b0;
-			flg_115200 <= 1'b1;
-			time_out <= 24'b0;
-			if(~tx_full)
-			begin
-				r_wr <= 1'b1;
-				at_cnt <= at_cnt + 1'b1;
-				r_do <= AT[at_cnt];
-			end
-		end
+        SHOW:
+            r_state <= IDLE;
+        ERROR:
+            r_state <= ERROR;
+        default:
+            r_state <= ERROR;
+    endcase
 
-		RESPONSE:
-		begin
-			if(clk_en)
-				time_out  <= time_out + 1'b1;
-			if(new_data & ~r_rd)
-			begin
-				r_rd <= 1'b1;
-				r_di <= data_in;
-			end	
+    case(r_state)
+        TEST_AT:
+        begin
+            resp_cnt <= 3'b0;
+            flg_9600 <= 1'b0;
+            flg_115200 <= 1'b1;
+            time_out <= 24'b0;
+            if(~tx_full)
+            begin
+                r_wr <= 1'b1;
+                at_cnt <= at_cnt + 1'b1;
+                r_do <= AT[at_cnt];
+            end
+        end
 
-			if(r_rd)
-			begin
-				resp_cnt <= resp_cnt + 1'b1;
-				RESP[resp_cnt] <= r_di;
-			end
-		end
+        RESPONSE:
+        begin
+            if(clk_en)
+                time_out  <= time_out + 1'b1;
+            if(new_data & ~r_rd)
+            begin
+                r_rd <= 1'b1;
+                r_di <= data_in;
+            end 
 
-		READ:
-		begin
-			time_out <= 16'b0;
-			at_cnt <= 3'd0;
-			if(resp_cnt != 3'd0)
-			begin
-				flg_9600 <= 1'b0;
-				flg_115200 <= 1'b1;
-			end
-			else
-			begin
-				flg_9600 <= 1'b1;
-				flg_115200 <= 1'b0;
-			end
-		end
+            if(r_rd)
+            begin
+                resp_cnt <= resp_cnt + 1'b1;
+                RESP[resp_cnt] <= r_di;
+            end
+        end
 
-		CONFIG115200:
-		begin
-			flg_9600 <= 1'b1;
-			flg_115200 <= 1'b0;		
-			time_out <= 19'b0;
-			resp_cnt <= 3'b0;
-			if(~tx_full)
-			begin
-				r_wr <= 1'b1;
-				at_cnt <= at_cnt + 1'b1;
-				r_do <= AT[at_cnt];
-			end
-		end
-		
-		SHOW:
-		begin
-			if(new_data & ~r_rd)
-				r_rd <= 1'b1;
+        READ:
+        begin
+            time_out <= 16'b0;
+            at_cnt <= 3'd0;
+            if(resp_cnt != 3'd0)
+            begin
+                flg_9600 <= 1'b0;
+                flg_115200 <= 1'b1;
+            end
+            else
+            begin
+                flg_9600 <= 1'b1;
+                flg_115200 <= 1'b0;
+            end
+        end
 
-			if(r_rd)
-			begin
-				resp_cnt <= resp_cnt + 1'b1;
-				r_wr <= 1'b1;
-				r_do <= RESP[resp_cnt];
-			end
-		end
-		
-		ERROR:
-		begin
-			r_wr <= 1'b1;
-			r_do <= {1'b0, at_cnt, 1'b0, resp_cnt};
-		end
-		
-		IDLE:
-		begin
-			at_cnt <= 3'b0;
-			resp_cnt <= 3'b0;
-			if(new_data & ~r_rd & ~tx_full)
-			begin
-				r_rd <= 1'b1;
-				r_di <= data_in;
-			end
-			if(r_rd)
-			begin
-				r_wr <= 1'b1;
-				case(data_in)
-					8'h11:
-						r_do <= 8'hFF;
-					default:
-						r_do <= r_di + 1'b1;
-				endcase
-			end
-		end
-	endcase
+        CONFIG115200:
+        begin
+            flg_9600 <= 1'b1;
+            flg_115200 <= 1'b0;     
+            time_out <= 19'b0;
+            resp_cnt <= 3'b0;
+            if(~tx_full)
+            begin
+                r_wr <= 1'b1;
+                at_cnt <= at_cnt + 1'b1;
+                r_do <= AT[at_cnt];
+            end
+        end
+        
+        SHOW:
+        begin
+            if(new_data & ~r_rd)
+                r_rd <= 1'b1;
+
+            if(r_rd)
+            begin
+                resp_cnt <= resp_cnt + 1'b1;
+                r_wr <= 1'b1;
+                r_do <= RESP[resp_cnt];
+            end
+        end
+        
+        ERROR:
+        if(~tx_full)
+        begin
+            r_wr <= 1'b1;
+            r_do <= {1'b0, at_cnt, 1'b0, resp_cnt};
+        end
+        
+        IDLE:
+        begin
+            at_cnt <= 3'b0;
+            resp_cnt <= 3'b0;
+            if(new_data & ~r_rd & ~tx_full)
+            begin
+                r_rd <= 1'b1;
+                r_di <= data_in;
+            end
+            if(r_rd)
+            begin
+                r_wr <= 1'b1;
+                case(data_in)
+                    8'h11:
+                        r_do <= 8'hFF;
+                    default:
+                        r_do <= r_di + 1'b1;
+                endcase
+            end
+        end
+    endcase
 end
-
 endmodule

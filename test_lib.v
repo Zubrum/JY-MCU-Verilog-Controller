@@ -1,9 +1,8 @@
 `include "jymcu_lib.vh"
 
-module test_lib
+module jy_mcu
     (
     input           wire    clk,
-
     input           wire    BT_in,
     output          wire    BT_out
     );
@@ -15,7 +14,6 @@ wire	baud_115200x8;
 wire 	speed_select;
 wire    baud_clk = speed_select ? baud_115200 : baud_9600;
 wire    baud_clkx8 = speed_select ? baud_115200x8 : baud_9600x8;
-
 
 zrb_baud_generator #(50000000,9600)   u00(clk, !speed_select, baud_9600, baud_9600x8);
 zrb_baud_generator #(50000000,115200) u01(clk,  speed_select, baud_115200, baud_115200x8);
@@ -34,7 +32,7 @@ zrb_uart_rx #(8,"NO",1) u1(
 	rx_write,					//write_enable_out
     rx_busy 				//rx_busy_out
     );
-zrb_sync_fifo #(3,8) u10(
+zrb_sync_fifo #(2,8) u10(
     1'b0,			//reset
     clk,			//write_clock
     rx_write,			//write_enable
@@ -44,7 +42,6 @@ zrb_sync_fifo #(3,8) u10(
     rx_full,			//fifo_full_out
     rx_empty			//fifo_empty_out
     );
-
 
 wire [7:0]cindata;
 wire [7:0]cdata;
@@ -69,7 +66,7 @@ wire				tx_busy;
 wire				tx_full;
 wire				tx_empty;
 
-zrb_sync_fifo #(3,8) u20(
+zrb_sync_fifo #(2,8) u20(
     1'b0,			//reset
     clk,			//clock
     cwr,//cntrl_wr,		//write_enable
@@ -90,6 +87,5 @@ zrb_uart_tx #(8,"NO",1) u2(
     tx_busy,					//tx_busy_out
 	tx_read
     );
-
 
 endmodule

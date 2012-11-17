@@ -25,8 +25,8 @@ wire rx_full;
 wire rx_empty;
 zrb_uart_rx #(8,"NO",1) u1(
     clk, //HIGH FREQ		//input clock
-	baud_clkx8,				//clock_enable
-	1'b0,					//reset
+    baud_clkx8,				//clock_enable
+    1'b0,					//reset
     BT_in,					//data_in
     rx_data,			//data_out[7:0]
 	rx_write,					//write_enable_out

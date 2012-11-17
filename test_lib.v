@@ -29,7 +29,7 @@ zrb_uart_rx #(8,"NO",1) u1(
     1'b0,					//reset
     BT_in,					//data_in
     rx_data,			//data_out[7:0]
-	rx_write,					//write_enable_out
+    rx_write,					//write_enable_out
     rx_busy 				//rx_busy_out
     );
 zrb_sync_fifo #(2,8) u10(
@@ -78,14 +78,14 @@ zrb_sync_fifo #(2,8) u20(
     );
 
 zrb_uart_tx #(8,"NO",1) u2(
-	clk,					//input clock
+    clk,					//input clock
     baud_clk, //BAUD RATE	//clock_enable_8x
     1'b0,					//reset
     ~tx_empty,					//write_in
     tx_data,				//input_data[7:0]
     BT_out,					//data_out
     tx_busy,					//tx_busy_out
-	tx_read
+    tx_read
     );
 
 endmodule
